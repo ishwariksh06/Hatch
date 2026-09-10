@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Bricolage_Grotesque, Inter } from "next/font/google";
 import "./globals.css";
 
@@ -16,7 +16,18 @@ const body = Inter({
 
 export const metadata: Metadata = {
   title: "HATCH — campus kitchen",
-  description: "Order from the campus kitchen. Skip the queue.",
+  description: "Order from the campus kitchen, pay in a tap, track it to your hands.",
+  applicationName: "HATCH",
+  appleWebApp: { capable: true, statusBarStyle: "default", title: "HATCH" },
+  formatDetection: { telephone: false },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#FFFDF6",
+  colorScheme: "light",
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

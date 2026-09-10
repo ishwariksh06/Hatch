@@ -48,8 +48,22 @@ if (!fs.existsSync(outputDir)) {
   fs.mkdirSync(outputDir, { recursive: true });
 }
 
+async function fetchWithRetry(url, options, retries = 3) {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      const res = await fetch(url, options);
+      if (res.ok) return res;
+      if (res.status === 404) return res;
+    } catch (err) {
+      if (attempt === retries) throw err;
+      await new Promise(r => setTimeout(r, 1000 * attempt));
+    }
+  }
+  throw new Error(`Failed to fetch ${url} after ${retries} attempts`);
+}
+
 async function getPinImage(url) {
-  const res = await fetch(url, {
+  const res = await fetchWithRetry(url, {
     redirect: 'follow',
     headers: {
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -60,17 +74,17 @@ async function getPinImage(url) {
 
   const html = await res.text();
   
-  // 1. Check for canonical pin image matching standard pattern (736x or originals with 3-level folder structure)
-  const matches = [...html.matchAll(/https:\/\/i\.pinimg\.com\/(?:736x|originals|564x)\/[a-f0-9]{2}\/[a-f0-9]{2}\/[a-f0-9]{2}\/[a-f0-9]{32}\.(?:jpg|jpeg|png|webp)/gi)].map(m => m[0]);
+  const matches = [...html.matchAll(/https:\/\/i\.pinimg\.com\/(?:736x|originals|564x|1200x)\/[a-f0-9]{2}\/[a-f0-9]{2}\/[a-f0-9]{2}\/[a-f0-9]{32}\.(?:jpg|jpeg|png|webp)/gi)].map(m => m[0]);
   
   if (matches.length > 0) {
     const unique = [...new Set(matches)].filter(u => !u.endsWith('d53b014d86a6b6761bf649a0ed813c2b.png'));
     if (unique.length > 0) {
+      const p736 = unique.find(u => u.includes('/736x/'));
+      if (p736) return p736;
       return unique[0];
     }
   }
 
-  // 2. Search for any .jpg on i.pinimg.com
   const jpgMatches = [...html.matchAll(/https:\/\/i\.pinimg\.com\/(?:736x|originals|564x)\/[^\s"'<>]+\.(?:jpg|jpeg)/gi)].map(m => m[0]);
   if (jpgMatches.length > 0) {
     return jpgMatches[0];
@@ -80,6 +94,12 @@ async function getPinImage(url) {
 }
 
 async function downloadItem(item, index) {
+  const filePath = path.join(outputDir, `${item.name}.jpeg`);
+  if (fs.existsSync(filePath) && fs.statSync(filePath).size > 10000) {
+    console.log(`[${index + 1}/${items.length}] ${item.title}... ⏩ Already downloaded (${(fs.statSync(filePath).size / 1024).toFixed(1)} KB)`);
+    return { success: true, item: item.title, filename: `${item.name}.jpeg` };
+  }
+
   process.stdout.write(`[${index + 1}/${items.length}] ${item.title}... `);
   try {
     const imgUrl = await getPinImage(item.url);
@@ -88,7 +108,7 @@ async function downloadItem(item, index) {
       return { success: false, item: item.title, error: 'No image found' };
     }
 
-    const imgRes = await fetch(imgUrl, {
+    const imgRes = await fetchWithRetry(imgUrl, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
       }
@@ -100,7 +120,6 @@ async function downloadItem(item, index) {
     }
 
     const buffer = Buffer.from(await imgRes.arrayBuffer());
-    const filePath = path.join(outputDir, `${item.name}.jpeg`);
     fs.writeFileSync(filePath, buffer);
     console.log(`✅ Saved ${(buffer.length / 1024).toFixed(1)} KB -> ${item.name}.jpeg`);
     return { success: true, item: item.title, filename: `${item.name}.jpeg`, size: buffer.length, sourceUrl: imgUrl };
@@ -114,9 +133,14 @@ async function run() {
   console.log(`Starting download of ${items.length} photos to ${outputDir}\n`);
   const results = [];
   for (let i = 0; i < items.length; i++) {
-    const res = await downloadItem(items[i], i);
-    results.push(res);
-    await new Promise(r => setTimeout(r, 200));
+    try {
+      const res = await downloadItem(items[i], i);
+      results.push(res);
+    } catch (e) {
+      console.log(`Unexpected error for ${items[i].title}: ${e.message}`);
+      results.push({ success: false, item: items[i].title, error: e.message });
+    }
+    await new Promise(r => setTimeout(r, 400));
   }
 
   const succeeded = results.filter(r => r.success);
