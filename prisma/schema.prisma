@@ -43,6 +43,8 @@ model FoodItem {
   available   Boolean     @default(true)
   isVeg       Boolean     @default(true)
   prepMinutes Int         @default(10)
+  isSpecial   Boolean     @default(false)
+  specialDay  Int? // 0 = Monday .. 6 = Sunday; set only for weekly specials
   imageUrl    String? // null => deterministic SVG placeholder
   cartItems   CartItem[]
   orderItems  OrderItem[]

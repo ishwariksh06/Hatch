@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { SignJWT, jwtVerify } from "jose";
 import bcrypt from "bcryptjs";
+import { prisma } from "./prisma";
 
 const COOKIE = "hatch_session";
 const secret = new TextEncoder().encode(
@@ -63,15 +64,20 @@ export async function getSession(): Promise<Session | null> {
   }
 }
 
+async function sessionUserExists(userId: string): Promise<boolean> {
+  const u = await prisma.user.findUnique({ where: { id: userId }, select: { id: true } });
+  return !!u;
+}
+
 export async function requireUser(): Promise<Session> {
   const s = await getSession();
-  if (!s) redirect("/login");
+  if (!s || !(await sessionUserExists(s.userId))) redirect("/logout");
   return s;
 }
 
 export async function requireRole(role: Role): Promise<Session> {
   const s = await getSession();
-  if (!s) redirect("/login");
+  if (!s || !(await sessionUserExists(s.userId))) redirect("/logout");
   if (s.role !== role) redirect("/403");
   return s;
 }
