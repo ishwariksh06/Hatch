@@ -11,8 +11,8 @@ import crypto from "crypto";
 
 export type PaymentProvider = "mock" | "razorpay";
 
-const KEY_ID = process.env.RAZORPAY_KEY_ID;
-const KEY_SECRET = process.env.RAZORPAY_KEY_SECRET;
+const KEY_ID = process.env.RAZORPAY_KEY_ID?.trim();
+const KEY_SECRET = process.env.RAZORPAY_KEY_SECRET?.trim();
 
 export function paymentProvider(): PaymentProvider {
   return KEY_ID && KEY_SECRET ? "razorpay" : "mock";
@@ -28,7 +28,7 @@ export async function createRazorpayOrder(amountPaise: number, receipt: string):
   const res = await fetch("https://api.razorpay.com/v1/orders", {
     method: "POST",
     headers: { Authorization: `Basic ${auth}`, "Content-Type": "application/json" },
-    body: JSON.stringify({ amount: amountPaise, currency: "INR", receipt, payment_capture: 1 }),
+    body: JSON.stringify({ amount: Math.round(amountPaise), currency: "INR", receipt }),
   });
   if (!res.ok) {
     throw new Error(`Razorpay order failed: ${res.status} ${await res.text()}`);

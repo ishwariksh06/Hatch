@@ -69,7 +69,12 @@ export async function startRazorpayPayment(publicId: string): Promise<RazorpaySt
 
   let razorpayOrderId = order.paymentOrderId;
   if (!razorpayOrderId) {
-    razorpayOrderId = await createRazorpayOrder(order.totalCents, order.publicId);
+    try {
+      razorpayOrderId = await createRazorpayOrder(order.totalCents, order.publicId);
+    } catch (e) {
+      console.error("[razorpay] create order failed", e);
+      return { ok: false, error: "Couldn't reach the payment gateway. Try again or pay at the counter." };
+    }
     await prisma.order.update({
       where: { id: order.id },
       data: { paymentOrderId: razorpayOrderId, paymentProvider: "razorpay" },
