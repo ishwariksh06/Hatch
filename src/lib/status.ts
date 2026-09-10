@@ -29,6 +29,16 @@ export function nextStage(status: string, fulfilment: Fulfilment): OrderStatus |
   return stages[i + 1];
 }
 
+/**
+ * What the kitchen admin can advance to. For delivery orders the admin stops at
+ * "Ready" — from there the runner owns the order (start run -> Out for delivery,
+ * mark delivered -> Completed).
+ */
+export function adminNextStage(status: string, fulfilment: Fulfilment): OrderStatus | null {
+  if (fulfilment === "delivery" && status === "Ready") return null;
+  return nextStage(status, fulfilment);
+}
+
 export function isActive(status: string): boolean {
   return status !== "Completed";
 }

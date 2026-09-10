@@ -19,7 +19,7 @@ export async function startRun() {
   const orders = await prisma.order.findMany({
     where: {
       fulfilment: "delivery",
-      status: "Ready",
+      status: { in: ["Ready", "Out for delivery"] },
       stop: null,
       dropLocationId: { not: null },
     },

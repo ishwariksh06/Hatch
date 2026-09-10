@@ -28,7 +28,12 @@ export default async function RunnerPage() {
       },
     }),
     prisma.order.count({
-      where: { fulfilment: "delivery", status: "Ready", stop: null, dropLocationId: { not: null } },
+      where: {
+        fulfilment: "delivery",
+        status: { in: ["Ready", "Out for delivery"] },
+        stop: null,
+        dropLocationId: { not: null },
+      },
     }),
     prisma.campusLocation.findFirst({ where: { isHub: true } }),
   ]);

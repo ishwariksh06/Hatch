@@ -5,7 +5,7 @@ import { z } from "zod";
 import { requireRole } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { rupeesToPaise } from "@/lib/format";
-import { nextStage } from "@/lib/status";
+import { adminNextStage } from "@/lib/status";
 import type { Fulfilment } from "@/lib/status";
 
 /* ---------- orders ---------- */
@@ -14,7 +14,7 @@ export async function advanceOrder(orderId: string) {
   await requireRole("admin");
   const order = await prisma.order.findUnique({ where: { id: orderId } });
   if (!order) return { ok: false };
-  const next = nextStage(order.status, order.fulfilment as Fulfilment);
+  const next = adminNextStage(order.status, order.fulfilment as Fulfilment);
   if (!next) return { ok: false };
   await prisma.order.update({ where: { id: orderId }, data: { status: next } });
   revalidatePath("/admin/orders");

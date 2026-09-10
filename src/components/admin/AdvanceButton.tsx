@@ -2,7 +2,7 @@
 
 import { useTransition } from "react";
 import { advanceOrder } from "@/app/actions/admin";
-import { nextStage } from "@/lib/status";
+import { adminNextStage } from "@/lib/status";
 import type { Fulfilment } from "@/lib/status";
 import { buttonClass } from "@/components/ui/Button";
 
@@ -16,12 +16,20 @@ export function AdvanceButton({
   fulfilment: Fulfilment;
 }) {
   const [pending, start] = useTransition();
-  const next = nextStage(status, fulfilment);
+  const next = adminNextStage(status, fulfilment);
 
   if (!next) {
+    if (status === "Completed") {
+      return (
+        <span className="inline-flex h-9 items-center px-3 text-sm text-[color:var(--color-success)] font-medium">
+          ✓ Completed
+        </span>
+      );
+    }
+    // delivery order at "Ready" — handed off to the runner
     return (
-      <span className="inline-flex h-9 items-center px-3 text-sm text-[color:var(--color-success)] font-medium">
-        ✓ Completed
+      <span className="inline-flex h-9 items-center px-3 text-sm text-muted">
+        🛵 With the runner
       </span>
     );
   }
