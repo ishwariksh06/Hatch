@@ -1,0 +1,96 @@
+@import "tailwindcss";
+
+/* =========================================================================
+   HATCH — design tokens. Light mode only.
+   Palette: yellow (chalk accent) · black (ink) · brown (warm neutral) · white.
+   Light font weights throughout. No other colors, radii, shadows or fonts.
+   ========================================================================= */
+
+@theme {
+  /* Surfaces — warm white / paper / kraft */
+  --color-bg:        #FFFDF6; /* page — warm white */
+  --color-surface:   #FBF4E4; /* cards — light paper */
+  --color-surface-2: #F3E8CE; /* nested / pressed / skeletons */
+  --color-board:     #241F1B; /* chalkboard — near-black brown */
+  --color-board-ink: #F7EFDD; /* chalk text on the board */
+
+  /* Ink */
+  --color-ink:   #1A1512; /* primary text — soft black */
+  --color-muted: #6B5B47; /* secondary text — brown-grey */
+  --color-line:  #E8D9BB; /* borders / dividers */
+
+  /* Accent — chalk yellow */
+  --color-accent:      #F4C430; /* mustard / marigold */
+  --color-accent-ink:  #1A1512; /* black text on yellow */
+  --color-accent-soft: #FCF1CE; /* tint backgrounds */
+
+  /* Brown — secondary warmth */
+  --color-brown:      #6F4A2A;
+  --color-brown-soft: #EFE0CC;
+
+  /* Status */
+  --color-success:      #2E6B4F;
+  --color-success-soft: #E3EFE8;
+  --color-warn:         #B5761F;
+  --color-warn-soft:    #FBEBD3;
+  --color-danger:       #B23B2E;
+  --color-danger-soft:  #F7E3DF;
+
+  /* Radii */
+  --radius-card:  16px;
+  --radius-input: 10px;
+  --radius-pill:  999px;
+
+  /* Shadows — warm-tinted only */
+  --shadow-sm: 0 1px 2px rgba(26,21,18,0.04), 0 4px 12px rgba(26,21,18,0.06);
+  --shadow-lg: 0 2px 8px rgba(26,21,18,0.08), 0 18px 44px rgba(26,21,18,0.14);
+
+  /* Type */
+  --font-display: var(--font-display), "Bricolage Grotesque", system-ui, sans-serif;
+  --font-body:    var(--font-body), "Inter", system-ui, sans-serif;
+
+  /* Motion */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+* {
+  border-color: var(--color-line);
+}
+
+html {
+  color-scheme: light;
+}
+
+body {
+  background: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  font-weight: 300;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1, h2, h3, h4, .font-display {
+  font-family: var(--font-display);
+  font-weight: 400;
+  letter-spacing: -0.01em;
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+/* Chalkboard surface helper */
+.board {
+  background:
+    radial-gradient(120% 140% at 20% 0%, rgba(255,255,255,0.06), transparent 60%),
+    var(--color-board);
+  color: var(--color-board-ink);
+}

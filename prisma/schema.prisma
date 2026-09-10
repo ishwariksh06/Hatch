@@ -1,0 +1,146 @@
+// HATCH — cafeteria ordering + campus delivery
+// datasource: sqlite. Money stored as integer paise. Never float math on prices.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  password  String // bcrypt hash
+  role      String   @default("student") // "student" | "admin" | "runner"
+  phone     String?
+  cart      Cart?
+  orders    Order[]
+  favourites Favourite[]
+  deliveries Delivery[]
+  createdAt DateTime @default(now())
+}
+
+model Category {
+  id        String     @id @default(cuid())
+  name      String     @unique // cuisine: "Indian", "Italian", "Fast Food", "Drinks & Sweets"
+  slug      String     @unique
+  emoji     String     @default("🍽️")
+  sortOrder Int        @default(0)
+  items     FoodItem[]
+}
+
+model FoodItem {
+  id          String      @id @default(cuid())
+  name        String
+  description String?
+  priceCents  Int
+  categoryId  String
+  category    Category    @relation(fields: [categoryId], references: [id])
+  available   Boolean     @default(true)
+  isVeg       Boolean     @default(true)
+  prepMinutes Int         @default(10)
+  imageUrl    String? // null => deterministic SVG placeholder
+  cartItems   CartItem[]
+  orderItems  OrderItem[]
+  favourites  Favourite[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+
+model Favourite {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  foodItemId String
+  foodItem   FoodItem @relation(fields: [foodItemId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@unique([userId, foodItemId])
+}
+
+model Cart {
+  id        String     @id @default(cuid())
+  userId    String     @unique
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     CartItem[]
+  updatedAt DateTime   @updatedAt
+}
+
+model CartItem {
+  id         String   @id @default(cuid())
+  cartId     String
+  cart       Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  foodItemId String
+  foodItem   FoodItem @relation(fields: [foodItemId], references: [id])
+  quantity   Int      @default(1)
+
+  @@unique([cartId, foodItemId])
+}
+
+model Order {
+  id             String      @id @default(cuid())
+  publicId       String      @unique // "HT-7QK2"
+  tokenNumber    Int
+  userId         String
+  user           User        @relation(fields: [userId], references: [id])
+  items          OrderItem[]
+  subtotalCents  Int
+  totalCents     Int
+  status         String      @default("Placed") // Placed|Preparing|Ready|Out for delivery|Completed
+  paymentStatus  String      @default("paid") // "paid" | "counter" | "failed"
+  paymentTxnId   String?
+  fulfilment     String      @default("pickup") // "pickup" | "delivery"
+  dropLocationId String?
+  dropLocation   CampusLocation? @relation(fields: [dropLocationId], references: [id])
+  dropDetail     String? // room / desk note
+  contactPhone   String?
+  stop           DeliveryStop?
+  placedAt       DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+}
+
+model OrderItem {
+  id           String   @id @default(cuid())
+  orderId      String
+  order        Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  foodItemId   String
+  foodItem     FoodItem @relation(fields: [foodItemId], references: [id])
+  nameSnapshot String
+  priceCents   Int
+  quantity     Int
+}
+
+model CampusLocation {
+  id      String  @id @default(cuid())
+  name    String  @unique
+  kind    String  @default("hostel") // hostel | department | library | gate | hub
+  x       Float // schematic map coords, 0..100
+  y       Float
+  isHub   Boolean @default(false) // the cafeteria pickup point
+  orders  Order[]
+}
+
+model Delivery {
+  id          String         @id @default(cuid())
+  runnerId    String
+  runner      User           @relation(fields: [runnerId], references: [id])
+  status      String         @default("active") // active | completed
+  stops       DeliveryStop[]
+  startedAt   DateTime       @default(now())
+  completedAt DateTime?
+}
+
+model DeliveryStop {
+  id          String   @id @default(cuid())
+  deliveryId  String
+  delivery    Delivery @relation(fields: [deliveryId], references: [id], onDelete: Cascade)
+  orderId     String   @unique
+  order       Order    @relation(fields: [orderId], references: [id])
+  sequence    Int
+  pickedUpAt  DateTime?
+  deliveredAt DateTime?
+}
