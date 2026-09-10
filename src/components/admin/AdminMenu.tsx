@@ -3,7 +3,7 @@
 import { useState, useTransition, useActionState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { formatINR, paiseToRupees } from "@/lib/format";
-import { imageSrc } from "@/lib/placeholder";
+import { FoodImg } from "@/components/food/FoodImg";
 import { Badge, inputClass } from "@/components/ui/primitives";
 import { buttonClass } from "@/components/ui/Button";
 import { ConfirmDialog } from "./ConfirmDialog";
@@ -267,10 +267,9 @@ export function AdminMenu({ categories }: { categories: AdminCategory[] }) {
                   key={item.id}
                   className="flex gap-3 items-center bg-surface border border-line rounded-[var(--radius-card)] p-2.5"
                 >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={imageSrc(item)}
-                    alt=""
+                  <FoodImg
+                    name={item.name}
+                    imageUrl={item.imageUrl}
                     className="w-12 h-12 rounded-[10px] object-cover border border-line shrink-0"
                   />
                   <div className="flex-1 min-w-0">

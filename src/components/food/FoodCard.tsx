@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react";
 import { Badge, Money } from "@/components/ui/primitives";
 import { buttonClass } from "@/components/ui/Button";
-import { imageSrc } from "@/lib/placeholder";
+import { FoodImg } from "@/components/food/FoodImg";
 import { addToCart, setQuantity, toggleFavourite } from "@/app/actions/cart";
 
 export type FoodCardItem = {
@@ -74,12 +74,10 @@ export function FoodCard({
       }`}
     >
       <div className="relative aspect-[4/3] bg-surface-2">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={imageSrc(item)}
-          alt={item.name}
+        <FoodImg
+          name={item.name}
+          imageUrl={item.imageUrl}
           className="w-full h-full object-cover"
-          loading="lazy"
         />
         <button
           onClick={fave}

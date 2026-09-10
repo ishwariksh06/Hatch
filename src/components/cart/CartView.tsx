@@ -5,7 +5,7 @@ import Link from "next/link";
 import { formatINR } from "@/lib/format";
 import { Money, inputClass } from "@/components/ui/primitives";
 import { buttonClass } from "@/components/ui/Button";
-import { imageSrc } from "@/lib/placeholder";
+import { FoodImg } from "@/components/food/FoodImg";
 import { setQuantity } from "@/app/actions/cart";
 import { beginCheckout, type CheckoutState } from "@/app/actions/checkout";
 
@@ -37,10 +37,9 @@ function Row({ item }: { item: Item }) {
         !item.available ? "opacity-60" : ""
       }`}
     >
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={imageSrc(item)}
-        alt=""
+      <FoodImg
+        name={item.name}
+        imageUrl={item.imageUrl}
         className="w-14 h-14 rounded-[10px] object-cover border border-line shrink-0"
       />
       <div className="flex-1 min-w-0">
