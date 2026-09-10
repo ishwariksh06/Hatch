@@ -7,7 +7,7 @@
     "build": "prisma generate && next build",
     "start": "next start",
     "lint": "eslint",
-    "setup": "prisma migrate dev --name init && prisma generate && prisma db seed",
+    "setup": "prisma db push && prisma generate && prisma db seed",
     "seed": "prisma db seed",
     "postinstall": "prisma generate"
   },
