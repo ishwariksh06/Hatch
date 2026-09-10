@@ -2,6 +2,8 @@ import { notFound, redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { formatINR } from "@/lib/format";
+import { paymentProvider } from "@/lib/payment";
+import { BillBreakdown } from "@/components/BillBreakdown";
 import { PaymentPanel } from "@/components/checkout/PaymentPanel";
 
 export default async function CheckoutPage({ params }: PageProps<"/checkout/[publicId]">) {
@@ -17,6 +19,9 @@ export default async function CheckoutPage({ params }: PageProps<"/checkout/[pub
     redirect(`/order/${publicId}`);
   }
 
+  const cgstCents = Math.round(order.taxCents / 2);
+  const sgstCents = order.taxCents - cgstCents;
+
   return (
     <div className="px-4 pt-4 pb-8 max-w-md mx-auto animate-[rise_.25s_ease-out]">
       <h1 className="font-display text-2xl mb-1">Checkout</h1>
@@ -27,7 +32,7 @@ export default async function CheckoutPage({ params }: PageProps<"/checkout/[pub
           : "Pick up at the counter"}
       </p>
 
-      <div className="bg-surface border border-line rounded-[var(--radius-card)] p-4 mb-4 text-sm">
+      <div className="bg-surface border border-line rounded-[var(--radius-card)] p-4 mb-3 text-sm">
         {order.items.map((it) => (
           <div key={it.id} className="flex justify-between py-1">
             <span className="text-muted">
@@ -36,23 +41,22 @@ export default async function CheckoutPage({ params }: PageProps<"/checkout/[pub
             <span className="tabular">{formatINR(it.priceCents * it.quantity)}</span>
           </div>
         ))}
-        <div className="flex justify-between py-1">
-          <span className="text-muted">Subtotal</span>
-          <span className="tabular">{formatINR(order.subtotalCents)}</span>
-        </div>
-        {order.totalCents !== order.subtotalCents && (
-          <div className="flex justify-between py-1">
-            <span className="text-muted">Delivery</span>
-            <span className="tabular">{formatINR(order.totalCents - order.subtotalCents)}</span>
-          </div>
-        )}
-        <div className="flex justify-between py-1 mt-1 pt-2 border-t border-dashed border-line font-medium">
-          <span>To pay</span>
-          <span className="tabular font-display text-base">{formatINR(order.totalCents)}</span>
-        </div>
       </div>
 
-      <PaymentPanel publicId={order.publicId} totalCents={order.totalCents} />
+      <BillBreakdown
+        subtotalCents={order.subtotalCents}
+        cgstCents={cgstCents}
+        sgstCents={sgstCents}
+        deliveryFeeCents={order.deliveryFeeCents}
+        totalCents={order.totalCents}
+        className="mb-4"
+      />
+
+      <PaymentPanel
+        publicId={order.publicId}
+        totalCents={order.totalCents}
+        provider={paymentProvider()}
+      />
     </div>
   );
 }

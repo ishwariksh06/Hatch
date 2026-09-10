@@ -91,11 +91,15 @@ model Order {
   userId         String
   user           User        @relation(fields: [userId], references: [id])
   items          OrderItem[]
-  subtotalCents  Int
-  totalCents     Int
+  subtotalCents    Int
+  deliveryFeeCents Int         @default(0)
+  taxCents         Int         @default(0) // 5% GST (CGST 2.5% + SGST 2.5%)
+  totalCents       Int
   status         String      @default("Placed") // Placed|Preparing|Ready|Out for delivery|Completed
-  paymentStatus  String      @default("paid") // "paid" | "counter" | "failed"
-  paymentTxnId   String?
+  paymentStatus  String      @default("pending") // pending|paid|counter|failed
+  paymentProvider String     @default("mock") // "mock" | "razorpay"
+  paymentOrderId String? // razorpay order id
+  paymentTxnId   String? // razorpay payment id, or MOCK-xxxx
   fulfilment     String      @default("pickup") // "pickup" | "delivery"
   dropLocationId String?
   dropLocation   CampusLocation? @relation(fields: [dropLocationId], references: [id])

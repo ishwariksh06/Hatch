@@ -8,6 +8,7 @@ import { buttonClass } from "@/components/ui/Button";
 import { FoodImg } from "@/components/food/FoodImg";
 import { setQuantity } from "@/app/actions/cart";
 import { beginCheckout, type CheckoutState } from "@/app/actions/checkout";
+import { computeBill } from "@/lib/bill";
 
 type Item = {
   foodItemId: string;
@@ -19,7 +20,6 @@ type Item = {
   lineCents: number;
 };
 
-const DELIVERY_FEE = 1500;
 
 function Row({ item }: { item: Item }) {
   const [qty, setQty] = useState(item.quantity);
@@ -82,7 +82,7 @@ export function CartView({
   const [state, formAction, pending] = useActionState<CheckoutState, FormData>(beginCheckout, {});
 
   const liveSubtotal = items.reduce((n, i) => n + i.priceCents * i.quantity, 0);
-  const fee = fulfilment === "delivery" ? DELIVERY_FEE : 0;
+  const bill = computeBill(liveSubtotal, fulfilment);
   const hasUnavailable = items.some((i) => !i.available);
 
   return (
@@ -149,18 +149,26 @@ export function CartView({
 
         <div className="bg-surface border border-line rounded-[var(--radius-card)] p-4 text-sm">
           <div className="flex justify-between py-1">
-            <span className="text-muted">Subtotal</span>
-            <span className="tabular">{formatINR(liveSubtotal)}</span>
+            <span className="text-muted">Item total</span>
+            <span className="tabular">{formatINR(bill.subtotalCents)}</span>
           </div>
-          {fulfilment === "delivery" && (
+          <div className="flex justify-between py-1">
+            <span className="text-muted">CGST 2.5%</span>
+            <span className="tabular">{formatINR(bill.cgstCents)}</span>
+          </div>
+          <div className="flex justify-between py-1">
+            <span className="text-muted">SGST 2.5%</span>
+            <span className="tabular">{formatINR(bill.sgstCents)}</span>
+          </div>
+          {bill.deliveryFeeCents > 0 && (
             <div className="flex justify-between py-1">
               <span className="text-muted">Delivery</span>
-              <span className="tabular">{formatINR(fee)}</span>
+              <span className="tabular">{formatINR(bill.deliveryFeeCents)}</span>
             </div>
           )}
           <div className="flex justify-between py-1 mt-1 pt-2 border-t border-dashed border-line font-medium">
             <span>Total</span>
-            <Money paise={liveSubtotal + fee} className="text-base" />
+            <Money paise={bill.totalCents} className="text-base" />
           </div>
         </div>
 
@@ -173,7 +181,7 @@ export function CartView({
           disabled={pending || hasUnavailable || liveSubtotal === 0}
           className={buttonClass("primary", "lg", "w-full mt-4")}
         >
-          {pending ? "Setting up payment…" : `Proceed to pay · ${formatINR(liveSubtotal + fee)}`}
+          {pending ? "Setting up payment…" : `Proceed to pay · ${formatINR(bill.totalCents)}`}
         </button>
         <Link href="/menu" className="block text-center text-sm text-muted mt-3">
           Add more items

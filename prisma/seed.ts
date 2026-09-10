@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { computeBill } from "../src/lib/bill";
 
 const prisma = new PrismaClient();
 
@@ -183,16 +184,19 @@ async function main() {
       }),
     );
     const subtotal = rows.reduce((n, r) => n + r.priceCents * r.quantity, 0);
-    const fee = opts.fulfilment === "delivery" ? 1500 : 0;
+    const bill = computeBill(subtotal, opts.fulfilment);
     return prisma.order.create({
       data: {
         publicId: code(),
         tokenNumber: token,
         userId: opts.user.id,
-        subtotalCents: subtotal,
-        totalCents: subtotal + fee,
+        subtotalCents: bill.subtotalCents,
+        deliveryFeeCents: bill.deliveryFeeCents,
+        taxCents: bill.taxCents,
+        totalCents: bill.totalCents,
         status: opts.status,
         paymentStatus: "paid",
+        paymentProvider: "mock",
         paymentTxnId: "MOCK-SEED",
         fulfilment: opts.fulfilment,
         dropLocationId: opts.location ? loc(opts.location).id : null,

@@ -4,6 +4,7 @@ import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { formatINR, formatTime } from "@/lib/format";
 import { Badge } from "@/components/ui/primitives";
+import { BillBreakdown } from "@/components/BillBreakdown";
 import { StatusStepper } from "@/components/order/StatusStepper";
 import { AutoRefresh } from "@/components/AutoRefresh";
 import type { Fulfilment } from "@/lib/status";
@@ -75,11 +76,16 @@ export default async function OrderTrackerPage({ params }: PageProps<"/order/[pu
             <span className="tabular">{formatINR(it.priceCents * it.quantity)}</span>
           </div>
         ))}
-        <div className="flex justify-between py-1 mt-1 pt-2 border-t border-dashed border-line font-medium">
-          <span>Total</span>
-          <span className="tabular font-display text-base">{formatINR(order.totalCents)}</span>
-        </div>
       </div>
+
+      <BillBreakdown
+        subtotalCents={order.subtotalCents}
+        cgstCents={Math.round(order.taxCents / 2)}
+        sgstCents={order.taxCents - Math.round(order.taxCents / 2)}
+        deliveryFeeCents={order.deliveryFeeCents}
+        totalCents={order.totalCents}
+        className="mt-3"
+      />
 
       <Link href="/orders" className="block text-center text-sm text-muted mt-5">
         All my orders

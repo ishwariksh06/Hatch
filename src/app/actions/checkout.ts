@@ -6,6 +6,8 @@ import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getCartSummary } from "@/lib/cart";
 import { generatePublicId, nextTokenNumber } from "@/lib/order-id";
+import { computeBill } from "@/lib/bill";
+import { paymentProvider } from "@/lib/payment";
 
 const schema = z.object({
   fulfilment: z.enum(["pickup", "delivery"]),
@@ -36,7 +38,7 @@ export async function beginCheckout(
   if (cart.hasUnavailable)
     return { error: "Remove the sold-out items before checking out" };
 
-  const deliveryFeeCents = fulfilment === "delivery" ? 1500 : 0;
+  const bill = computeBill(cart.subtotalCents, fulfilment);
   const publicId = await generatePublicId();
   const tokenNumber = await nextTokenNumber();
 
@@ -45,10 +47,13 @@ export async function beginCheckout(
       publicId,
       tokenNumber,
       userId: s.userId,
-      subtotalCents: cart.subtotalCents,
-      totalCents: cart.subtotalCents + deliveryFeeCents,
+      subtotalCents: bill.subtotalCents,
+      deliveryFeeCents: bill.deliveryFeeCents,
+      taxCents: bill.taxCents,
+      totalCents: bill.totalCents,
       status: "Placed",
       paymentStatus: "pending",
+      paymentProvider: paymentProvider(),
       fulfilment,
       dropLocationId: fulfilment === "delivery" ? dropLocationId : null,
       dropDetail: fulfilment === "delivery" ? dropDetail || null : null,
