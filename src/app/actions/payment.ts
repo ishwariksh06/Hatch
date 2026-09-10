@@ -73,7 +73,8 @@ export async function startRazorpayPayment(publicId: string): Promise<RazorpaySt
       razorpayOrderId = await createRazorpayOrder(order.totalCents, order.publicId);
     } catch (e) {
       console.error("[razorpay] create order failed", e);
-      return { ok: false, error: "Couldn't reach the payment gateway. Try again or pay at the counter." };
+      const detail = e instanceof Error ? e.message : String(e);
+      return { ok: false, error: `Payment gateway error — ${detail}` };
     }
     await prisma.order.update({
       where: { id: order.id },
