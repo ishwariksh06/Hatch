@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { logoutAction } from "@/app/actions/auth";
 import { formatINR } from "@/lib/format";
+import { HatchMark } from "@/components/brand/HatchMark";
 
 const NAV = [
   { href: "/menu", label: "Menu", icon: "🍽️" },
@@ -44,8 +45,8 @@ export function AppShell({
             <span className="w-1 h-1 rounded-full bg-ink" />
           </span>
         </button>
-        <Link href="/menu" className="font-display text-lg tracking-tight">
-          HATCH
+        <Link href="/menu" aria-label="HATCH home">
+          <HatchMark size="sm" />
         </Link>
         <Link
           href="/cart"

@@ -43,86 +43,87 @@ const items = [
   { name: "crispy-chicken-wings", title: "Crispy Chicken Wings (6 pcs)", url: "https://pin.it/CR1326Yu5" }
 ];
 
-const outputDir = path.join(__dirname, '..', 'hatch', 'public', 'food');
+const outputDir = path.join(__dirname, 'public', 'food');
 if (!fs.existsSync(outputDir)) {
   fs.mkdirSync(outputDir, { recursive: true });
 }
 
-async function extractImageUrl(html) {
-  // Check for 736x or originals pinimg URLs
-  const matches = [...html.matchAll(/https:\/\/i\.pinimg\.com\/(?:originals|736x|564x|1200x)\/[a-zA-Z0-9_\/.-]+\.(?:jpg|jpeg|png|webp)/gi)].map(m => m[0]);
+async function getPinImage(url) {
+  const res = await fetch(url, {
+    redirect: 'follow',
+    headers: {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+      'Accept-Language': 'en-US,en;q=0.9'
+    }
+  });
+
+  const html = await res.text();
+  
+  // 1. Check for canonical pin image matching standard pattern (736x or originals with 3-level folder structure)
+  const matches = [...html.matchAll(/https:\/\/i\.pinimg\.com\/(?:736x|originals|564x)\/[a-f0-9]{2}\/[a-f0-9]{2}\/[a-f0-9]{2}\/[a-f0-9]{32}\.(?:jpg|jpeg|png|webp)/gi)].map(m => m[0]);
+  
   if (matches.length > 0) {
-    // Prefer originals, then 736x, then others
-    const originals = matches.find(m => m.includes('/originals/'));
-    if (originals) return originals;
-    const highRes = matches.find(m => m.includes('/736x/'));
-    if (highRes) return highRes;
-    return matches[0];
+    const unique = [...new Set(matches)].filter(u => !u.endsWith('d53b014d86a6b6761bf649a0ed813c2b.png'));
+    if (unique.length > 0) {
+      return unique[0];
+    }
   }
 
-  // Fallback: any pinimg link with extension
-  const anyPinimg = html.match(/https:\/\/i\.pinimg\.com\/[^\s"'<>]+\.(?:jpg|jpeg|png|webp)/i);
-  if (anyPinimg) return anyPinimg[0];
+  // 2. Search for any .jpg on i.pinimg.com
+  const jpgMatches = [...html.matchAll(/https:\/\/i\.pinimg\.com\/(?:736x|originals|564x)\/[^\s"'<>]+\.(?:jpg|jpeg)/gi)].map(m => m[0]);
+  if (jpgMatches.length > 0) {
+    return jpgMatches[0];
+  }
 
   return null;
 }
 
 async function downloadItem(item, index) {
-  console.log(`[${index + 1}/${items.length}] Processing ${item.title}...`);
+  process.stdout.write(`[${index + 1}/${items.length}] ${item.title}... `);
   try {
-    const res = await fetch(item.url, {
-      redirect: 'follow',
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'
-      }
-    });
-
-    const html = await res.text();
-    let imgUrl = await extractImageUrl(html);
-
+    const imgUrl = await getPinImage(item.url);
     if (!imgUrl) {
-      console.warn(`  ❌ Could not find image for ${item.title}`);
+      console.log(`❌ No image URL found`);
       return { success: false, item: item.title, error: 'No image found' };
     }
 
-    // Try upgrading 736x to originals if possible, or download directly
-    console.log(`  Found URL: ${imgUrl}`);
-    let imgRes = await fetch(imgUrl, {
+    const imgRes = await fetch(imgUrl, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
       }
     });
 
-    if (!imgRes.ok && imgUrl.includes('/originals/')) {
-      // Fallback to 736x
-      imgUrl = imgUrl.replace('/originals/', '/736x/');
-      imgRes = await fetch(imgUrl);
+    if (!imgRes.ok) {
+      console.log(`❌ HTTP error ${imgRes.status}`);
+      return { success: false, item: item.title, error: `HTTP ${imgRes.status}` };
     }
 
     const buffer = Buffer.from(await imgRes.arrayBuffer());
     const filePath = path.join(outputDir, `${item.name}.jpeg`);
     fs.writeFileSync(filePath, buffer);
-    console.log(`  ✅ Saved to ${filePath} (${(buffer.length / 1024).toFixed(1)} KB)`);
-    return { success: true, item: item.title, path: filePath, size: buffer.length };
+    console.log(`✅ Saved ${(buffer.length / 1024).toFixed(1)} KB -> ${item.name}.jpeg`);
+    return { success: true, item: item.title, filename: `${item.name}.jpeg`, size: buffer.length, sourceUrl: imgUrl };
   } catch (err) {
-    console.error(`  ❌ Error processing ${item.title}:`, err.message);
+    console.log(`❌ Error: ${err.message}`);
     return { success: false, item: item.title, error: err.message };
   }
 }
 
 async function run() {
-  console.log(`Starting download of ${items.length} images to ${outputDir}...`);
+  console.log(`Starting download of ${items.length} photos to ${outputDir}\n`);
   const results = [];
   for (let i = 0; i < items.length; i++) {
     const res = await downloadItem(items[i], i);
     results.push(res);
-    // Small pause to avoid rate limiting
-    await new Promise(r => setTimeout(r, 400));
+    await new Promise(r => setTimeout(r, 200));
   }
 
   const succeeded = results.filter(r => r.success);
-  console.log(`\n🎉 Completed! Successfully downloaded ${succeeded.length}/${items.length} photos as JPEG.`);
+  console.log(`\n=========================================`);
+  console.log(`🎉 Download Complete: ${succeeded.length}/${items.length} photos saved successfully in JPEG format!`);
+  console.log(`Destination: ${outputDir}`);
+  console.log(`=========================================`);
 }
 
 run();

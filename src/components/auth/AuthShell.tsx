@@ -1,38 +1,34 @@
 import type { ReactNode } from "react";
+import { HatchEgg } from "@/components/brand/HatchEgg";
+import { HatchMark } from "@/components/brand/HatchMark";
+import { FoodDoodles } from "@/components/brand/FoodDoodles";
 
 export function AuthShell({ heading, children }: { heading: string; children: ReactNode }) {
   return (
-    <main className="min-h-dvh grid md:grid-cols-2">
-      {/* Brand / chalkboard panel */}
-      <section className="board relative hidden md:flex flex-col justify-between p-10 overflow-hidden">
-        <div className="font-display text-2xl tracking-tight">HATCH</div>
-        <div className="space-y-4">
-          <p className="font-display text-4xl leading-tight">
-            The campus kitchen,
-            <br />
-            in your pocket.
-          </p>
-          <p className="text-board-ink/70 max-w-sm text-sm leading-relaxed">
-            Browse today&apos;s menu, pay in a tap, and track your order from the pan to
-            your hands. No queue, no shouting your name over the counter.
-          </p>
-        </div>
-        <div className="text-board-ink/50 text-xs">Made for the campus · fresh daily</div>
-        <div
-          className="absolute -right-16 -bottom-16 w-64 h-64 rounded-full"
-          style={{ background: "var(--color-accent)", opacity: 0.14 }}
-        />
-      </section>
+    <main className="relative min-h-dvh flex flex-col items-center justify-center px-5 py-12 overflow-hidden">
+      <FoodDoodles
+        spots={[
+          { top: "6%", left: "8%", rotate: -12, size: 58 },
+          { top: "14%", right: "10%", rotate: 14, size: 66 },
+          { bottom: "12%", left: "6%", rotate: 8, size: 62 },
+          { bottom: "8%", right: "9%", rotate: -16, size: 54 },
+          { top: "44%", left: "3%", rotate: 20, size: 46 },
+          { top: "40%", right: "4%", rotate: -8, size: 50 },
+        ]}
+      />
 
-      {/* Form panel */}
-      <section className="flex flex-col justify-center px-6 py-12 sm:px-12">
-        <div className="w-full max-w-sm mx-auto">
-          <div className="md:hidden font-display text-2xl mb-8">HATCH</div>
-          <h1 className="font-display text-3xl mb-1">{heading}</h1>
-          <p className="text-muted text-sm mb-8">Welcome to the counter.</p>
+      <div className="relative w-full max-w-sm flex flex-col items-center">
+        <HatchEgg size={128} className="animate-[bob_3s_ease-in-out_infinite]" />
+        <HatchMark size="xl" className="mt-2" />
+        <p className="mt-2 text-center text-muted text-sm max-w-[15rem]">
+          The campus kitchen, in your pocket. Skip the queue, track the pan.
+        </p>
+
+        <div className="mt-7 w-full bg-surface border-2 border-line rounded-[22px] shadow-lg p-6">
+          <h1 className="font-display font-semibold text-xl mb-4">{heading}</h1>
           {children}
         </div>
-      </section>
+      </div>
     </main>
   );
 }

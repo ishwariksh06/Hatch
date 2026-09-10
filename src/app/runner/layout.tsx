@@ -1,5 +1,6 @@
 import { requireRole } from "@/lib/auth";
 import { logoutAction } from "@/app/actions/auth";
+import { HatchMark } from "@/components/brand/HatchMark";
 
 export default async function RunnerLayout({ children }: { children: React.ReactNode }) {
   const s = await requireRole("runner");
@@ -7,7 +8,7 @@ export default async function RunnerLayout({ children }: { children: React.React
     <div className="min-h-dvh flex flex-col">
       <header className="sticky top-0 z-30 h-14 px-4 flex items-center justify-between bg-bg/90 backdrop-blur border-b border-line">
         <div className="flex items-center gap-2">
-          <span className="font-display text-lg">HATCH</span>
+          <HatchMark size="sm" />
           <span className="text-xs text-muted border border-line rounded-[var(--radius-pill)] px-2 py-0.5">
             Runner
           </span>

@@ -30,10 +30,6 @@ export default async function MenuHome() {
                 <span className="block font-display text-[15px] leading-tight">{c.name}</span>
                 <span className="text-xs text-muted">{c._count.items} dishes</span>
               </span>
-              <span
-                className="absolute -right-6 -bottom-6 w-20 h-20 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                style={{ background: "var(--color-accent)", opacity: 0.08 }}
-              />
             </Link>
           ))}
         </div>

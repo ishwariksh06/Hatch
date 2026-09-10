@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { logoutAction } from "@/app/actions/auth";
+import { HatchMark } from "@/components/brand/HatchMark";
 
 const NAV = [
   { href: "/admin/orders", label: "Orders" },
@@ -16,7 +17,7 @@ export function AdminShell({ name, children }: { name: string; children: React.R
       <header className="sticky top-0 z-30 bg-bg/90 backdrop-blur border-b border-line">
         <div className="max-w-3xl mx-auto px-4 h-14 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <span className="font-display text-lg">HATCH</span>
+            <HatchMark size="sm" />
             <span className="text-xs text-muted border border-line rounded-[var(--radius-pill)] px-2 py-0.5">
               Kitchen
             </span>
