@@ -157,7 +157,7 @@ async function main() {
   }
 
   const pw = await bcrypt.hash("hatch1234", 10);
-  await prisma.user.create({
+  const student = await prisma.user.create({
     data: { email: "student@hatch.dev", name: "Aditya Sharma", password: pw, role: "student", phone: "9000000001" },
   });
   await prisma.user.create({
@@ -166,6 +166,70 @@ async function main() {
   await prisma.user.create({
     data: { email: "runner@hatch.dev", name: "Ravi Kumar", password: pw, role: "runner", phone: "9000000002" },
   });
+  const classmates = await Promise.all(
+    [
+      ["priya@hatch.dev", "Priya Nair", "9000000010"],
+      ["rohan@hatch.dev", "Rohan Mehta", "9000000011"],
+      ["sara@hatch.dev", "Sara Khan", "9000000012"],
+    ].map(([email, name, phone]) =>
+      prisma.user.create({ data: { email, name, password: pw, role: "student", phone } }),
+    ),
+  );
+
+  // ---- demo orders (so admin + runner screens aren't empty) ----
+  const pick = async (name: string) =>
+    (await prisma.foodItem.findFirstOrThrow({ where: { name: { contains: name } } }));
+  const locs = await prisma.campusLocation.findMany({ where: { isHub: false } });
+  const loc = (n: string) => locs.find((l) => l.name.includes(n))!;
+  const ALPHA = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+  const code = () =>
+    "HT-" + Array.from({ length: 4 }, () => ALPHA[Math.floor(Math.random() * ALPHA.length)]).join("");
+
+  let token = 0;
+  async function makeOrder(opts: {
+    user: { id: string; phone: string | null };
+    items: Array<{ name: string; qty: number }>;
+    status: string;
+    fulfilment: "pickup" | "delivery";
+    location?: string;
+    dropDetail?: string;
+    minsAgo: number;
+  }) {
+    token += 1;
+    const rows = await Promise.all(
+      opts.items.map(async (i) => {
+        const f = await pick(i.name);
+        return { foodItemId: f.id, nameSnapshot: f.name, priceCents: f.priceCents, quantity: i.qty };
+      }),
+    );
+    const subtotal = rows.reduce((n, r) => n + r.priceCents * r.quantity, 0);
+    const fee = opts.fulfilment === "delivery" ? 1500 : 0;
+    const placedAt = new Date(Date.now() - opts.minsAgo * 60_000);
+    return prisma.order.create({
+      data: {
+        publicId: code(),
+        tokenNumber: token,
+        userId: opts.user.id,
+        subtotalCents: subtotal,
+        totalCents: subtotal + fee,
+        status: opts.status,
+        paymentStatus: "paid",
+        paymentTxnId: "MOCK-SEED",
+        fulfilment: opts.fulfilment,
+        dropLocationId: opts.location ? loc(opts.location).id : null,
+        dropDetail: opts.dropDetail ?? null,
+        contactPhone: opts.fulfilment === "delivery" ? opts.user.phone : null,
+        placedAt,
+        items: { create: rows },
+      },
+    });
+  }
+
+  await makeOrder({ user: student, items: [{ name: "Paneer Butter Masala", qty: 1 }, { name: "Cutting Chai", qty: 2 }], status: "Preparing", fulfilment: "pickup", minsAgo: 8 });
+  await makeOrder({ user: classmates[0], items: [{ name: "Margherita", qty: 1 }, { name: "Cold Coffee", qty: 1 }], status: "Ready", fulfilment: "delivery", location: "Hostel C", dropDetail: "Room 214", minsAgo: 18 });
+  await makeOrder({ user: classmates[1], items: [{ name: "Chicken Biryani", qty: 1 }], status: "Ready", fulfilment: "delivery", location: "Central Library", dropDetail: "Reading hall 2", minsAgo: 15 });
+  await makeOrder({ user: classmates[2], items: [{ name: "Veggie Pizza", qty: 1 }, { name: "Peri Peri Fries", qty: 1 }], status: "Ready", fulfilment: "delivery", location: "Engineering Block", dropDetail: "Lab 3", minsAgo: 12 });
+  await makeOrder({ user: classmates[0], items: [{ name: "Masala Dosa", qty: 2 }], status: "Completed", fulfilment: "pickup", minsAgo: 90 });
 
   const items = await prisma.foodItem.count();
   console.log(`\n  HATCH seed complete — ${items} items across ${CATEGORIES.length} sections.`);

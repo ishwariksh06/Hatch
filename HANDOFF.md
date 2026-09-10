@@ -30,11 +30,33 @@ Setup: `npm install && npm run setup && npm run dev`.
   - *Stubbed:* `/cart`, `/orders`, `/favourites`, `/order/[publicId]` are
     placeholder screens until their phases.
 
-## Next
+- **Phase 4 — cart — DONE.** Qty steppers, remove, pickup vs delivery, campus
+  drop-off + room + phone, live totals with delivery fee.
+- **Phase 5 — checkout + payment + tracker — DONE.** `beginCheckout` creates the
+  order (publicId + daily token). `/checkout` shows a styled UPI/Card panel behind
+  the `initiatePayment()` interface — **mock provider today**, Razorpay test-mode is
+  a drop-in of the same signature. Pay-at-counter fallback on failure.
+  `/order/[publicId]`: chalkboard token ticket, animated `StatusStepper`, ETA from
+  prep times, 10s auto-refresh while active.
+- **Phase 6 — order history — DONE.** `/orders` newest-first, compact stepper,
+  links to the live tracker. `/favourites` heart list.
+- **Phases 7 & 8 — admin — DONE.** `/admin/menu` dish CRUD in a slide-over (price
+  in ₹ → paise), prep time, veg + availability toggles, imageUrl, optimistic
+  availability switch, category add/delete, styled `ConfirmDialog`. Delete keeps
+  order history intact (soft-hide when referenced). `/admin/orders` all orders,
+  active/oldest-first, forward-only Advance button, 10s auto-refresh.
+- **Phase 9 — runner — DONE.** `/runner` batches all delivery orders the kitchen
+  has marked *Ready*, computes the shortest kitchen→all-drops loop
+  (nearest-neighbour + 2-opt, `lib/route.ts`), draws it on a schematic campus map,
+  and gives per-stop Picked up / Delivered actions that push the student's tracker
+  to *Out for delivery* / *Completed*.
 
-- Phase 4 — cart page (qty, remove, totals, delivery vs pickup choice)
-- Phase 5 — checkout + Razorpay + order + live status tracker
-- Phase 6 — order history
-- Phase 7 — admin menu & category management
-- Phase 8 — admin order management
-- Phase 9 — runner interface + route optimiser
+## Known gaps / honest status
+
+- **Payment is the mock provider.** Real Razorpay test keys are a documented
+  drop-in, not wired yet.
+- **"Live" = 10s polling**, not push/SSE (availability poll + `router.refresh`).
+- Runner route AI is the classical optimiser only — no LLM narration layer yet.
+- Not yet deployed to Vercel; SQLite needs swapping for Postgres (Neon) for a
+  serverless deploy.
+- Demo orders are seeded so admin/runner screens have content on first run.
